@@ -1,0 +1,81 @@
+// Derived from apify-client-js (Copyright Apify Technologies s.r.o., Apache-2.0).
+// Modified by TeraShift GmbH. See the LICENSE and NOTICE files.
+import ow from 'ow';
+
+import type { ApiClientOptionsWithOptionalResourcePath } from '../base/api_client';
+import { ResourceCollectionClient } from '../base/resource_collection_client';
+import type { PaginatedIterator, PaginatedList, PaginationOptions } from '../utils';
+import type { Build } from './build';
+
+/**
+ * Client for managing the collection of Actor builds.
+ *
+ * Provides methods to list Actor builds across all Actors or for a specific Actor.
+ * To access an individual build, use the `build()` method on the main ScrapelyClient.
+ *
+ * @example
+ * ```javascript
+ * const client = new ScrapelyClient({ token: 'my-token' });
+ *
+ * // List all builds
+ * const buildsClient = client.builds();
+ * const { items } = await buildsClient.list();
+ *
+ * // List builds for a specific Actor
+ * const actorBuildsClient = client.actor('my-actor-id').builds();
+ * const { items: actorBuilds } = await actorBuildsClient.list();
+ * ```
+ *
+ */
+export class BuildCollectionClient extends ResourceCollectionClient {
+    /**
+     * @hidden
+     */
+    constructor(options: ApiClientOptionsWithOptionalResourcePath) {
+        super({
+            ...options,
+            resourcePath: options.resourcePath || 'actor-builds',
+        });
+    }
+
+    /**
+     * Lists all Actor builds.
+     *
+     * Awaiting the return value (as you would with a Promise) will result in a single API call. The amount of fetched
+     * items in a single API call is limited.
+     * ```javascript
+     * const paginatedList = await client.list(options);
+     * ```
+     *
+     * Asynchronous iteration is also supported. This will fetch additional pages if needed until all items are
+     * retrieved.
+     *
+     * ```javascript
+     * for await (const singleItem of client.list(options)) {...}
+     * ```
+     *
+     * @param options - Pagination and sorting options.
+     * @returns A paginated iterator of Actor builds.
+     */
+    list(options: BuildCollectionClientListOptions = {}): PaginatedIterator<BuildCollectionClientListItem> {
+        ow(
+            options,
+            ow.object.exactShape({
+                limit: ow.optional.number.not.negative,
+                offset: ow.optional.number.not.negative,
+                desc: ow.optional.boolean,
+            }),
+        );
+
+        return this._listPaginated(options);
+    }
+}
+
+export interface BuildCollectionClientListOptions extends PaginationOptions {
+    desc?: boolean;
+}
+
+export type BuildCollectionClientListItem = Required<Pick<Build, 'id' | 'status' | 'startedAt' | 'finishedAt'>> &
+    Partial<Pick<Build, 'meta' | 'usageTotalUsd'>>;
+
+export type BuildCollectionClientListResult = PaginatedList<BuildCollectionClientListItem>;

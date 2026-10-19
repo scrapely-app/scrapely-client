@@ -1,0 +1,73 @@
+// Derived from apify-client-js (Copyright Apify Technologies s.r.o., Apache-2.0).
+// Modified by TeraShift GmbH. See the LICENSE and NOTICE files.
+import ow from 'ow';
+
+import type { ApiClientSubResourceOptions } from '../base/api_client';
+import { ResourceCollectionClient } from '../base/resource_collection_client';
+import type { PaginatedIterator, PaginationOptions } from '../utils';
+import type { WebhookDispatch } from './webhook_dispatch';
+
+/**
+ * Client for managing the collection of webhook dispatches.
+ *
+ * Webhook dispatches represent individual notifications sent by a webhook. This client provides
+ * methods to list all dispatches for a specific webhook.
+ *
+ * @example
+ * ```javascript
+ * const client = new ScrapelyClient({ token: 'my-token' });
+ * const webhookClient = client.webhook('my-webhook-id');
+ *
+ * // List all dispatches for this webhook
+ * const dispatchesClient = webhookClient.dispatches();
+ * const { items } = await dispatchesClient.list();
+ * ```
+ *
+ */
+export class WebhookDispatchCollectionClient extends ResourceCollectionClient {
+    /**
+     * @hidden
+     */
+    constructor(options: ApiClientSubResourceOptions) {
+        super({
+            resourcePath: 'webhook-dispatches',
+            ...options,
+        });
+    }
+
+    /**
+     * Lists all webhook dispatches.
+     *
+     * Awaiting the return value (as you would with a Promise) will result in a single API call. The amount of fetched
+     * items in a single API call is limited.
+     * ```javascript
+     * const paginatedList = await client.list(options);
+     * ```
+     *
+     * Asynchronous iteration is also supported. This will fetch additional pages if needed until all items are
+     * retrieved.
+     *
+     * ```javascript
+     * for await (const singleItem of client.list(options)) {...}
+     * ```
+     *
+     * @param options - Pagination and sorting options.
+     * @returns A paginated iterator of webhook dispatches.
+     */
+    list(options: WebhookDispatchCollectionListOptions = {}): PaginatedIterator<WebhookDispatch> {
+        ow(
+            options,
+            ow.object.exactShape({
+                limit: ow.optional.number.not.negative,
+                offset: ow.optional.number.not.negative,
+                desc: ow.optional.boolean,
+            }),
+        );
+
+        return this._listPaginated(options);
+    }
+}
+
+export interface WebhookDispatchCollectionListOptions extends PaginationOptions {
+    desc?: boolean;
+}
