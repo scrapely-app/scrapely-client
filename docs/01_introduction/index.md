@@ -6,6 +6,8 @@ slug: /
 description: 'The official JavaScript library to access the Scrapely API, with automatic retries, TypeScript support, and cross-platform compatibility.'
 ---
 
+<!-- Derived from apify-client-js (docs/01_introduction/index.md), Copyright Apify Technologies s.r.o., Apache License 2.0. Modified by TeraShift GmbH. -->
+
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
@@ -87,4 +89,4 @@ const { items } = await client.dataset(run.defaultDatasetId).listItems();
 console.log(items);
 ```
 
-> You can find your API token in the [Integrations section](https://api.scrape.ly) of the Scrapely dashboard. See the [Quick start guide](./quick-start.md) for more details on authentication.
+> You can find your API token in the [Integrations section](https://api.scrape.ly) of the Scrapely dashboard. The client sends requests to `https://api.scrape.ly` unless you pass another `baseUrl` or, in Node.js, set the `SCRAPELY_API_URL` environment variable (the `baseUrl` option wins). See the [Quick start guide](./quick-start.md) for more details on authentication.

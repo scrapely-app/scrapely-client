@@ -27,6 +27,7 @@ import {
     isStream,
     parseDateFields,
     pluckData,
+    toPathSegment,
 } from '../utils';
 
 /**
@@ -216,7 +217,7 @@ export class KeyValueStoreClient extends ResourceClient {
 
         const store = await this.get();
 
-        const recordPublicUrl = new URL(this._publicUrl(`records/${key}`));
+        const recordPublicUrl = new URL(this._publicUrl(`records/${toPathSegment(key)}`));
 
         if (store?.urlSigningSecretKey) {
             const signature = await createBoundStorageContentSignature({
@@ -307,7 +308,7 @@ export class KeyValueStoreClient extends ResourceClient {
      */
     async recordExists(key: string): Promise<boolean> {
         const requestOpts: Record<string, unknown> = {
-            url: this._url(`records/${key}`),
+            url: this._url(`records/${toPathSegment(key)}`),
             method: 'HEAD',
             params: this._params(),
         };
@@ -368,7 +369,7 @@ export class KeyValueStoreClient extends ResourceClient {
         if (options.signature) queryParams.signature = options.signature;
 
         const requestOpts: Record<string, unknown> = {
-            url: this._url(`records/${key}`),
+            url: this._url(`records/${toPathSegment(key)}`),
             method: 'GET',
             params: this._params(queryParams),
             timeout: DEFAULT_TIMEOUT_MILLIS,
@@ -478,7 +479,7 @@ export class KeyValueStoreClient extends ResourceClient {
         }
 
         const uploadOpts: ApifyRequestConfig = {
-            url: this._url(`records/${key}`),
+            url: this._url(`records/${toPathSegment(key)}`),
             method: 'PUT',
             params: this._params(),
             data: value,
@@ -504,7 +505,7 @@ export class KeyValueStoreClient extends ResourceClient {
         ow(key, ow.string);
 
         await this.httpClient.call({
-            url: this._url(`records/${key}`),
+            url: this._url(`records/${toPathSegment(key)}`),
             method: 'DELETE',
             params: this._params(),
             timeout: SMALL_TIMEOUT_MILLIS,

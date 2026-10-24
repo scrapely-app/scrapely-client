@@ -17,8 +17,10 @@ import {
     mutuallyExclusive,
     parseDateFields,
     pluckData,
+    REQUEST_ID_REGEX,
     RequestQueuePaginationIterator,
     sliceArrayByByteLength,
+    toPathSegment,
 } from '../utils';
 
 const DEFAULT_PARALLEL_BATCH_ADD_REQUESTS = 5;
@@ -506,7 +508,7 @@ export class RequestQueueClient extends ResourceClient {
     async getRequest(id: string): Promise<RequestQueueClientGetRequestResult | undefined> {
         ow(id, ow.string);
         const requestOpts: ApifyRequestConfig = {
-            url: this._url(`requests/${id}`),
+            url: this._url(`requests/${toPathSegment(id)}`),
             method: 'GET',
             timeout: Math.min(SMALL_TIMEOUT_MILLIS, this.timeoutMillis ?? Infinity),
             params: this._params(),
@@ -532,10 +534,11 @@ export class RequestQueueClient extends ResourceClient {
         request: RequestQueueClientRequestSchema,
         options: RequestQueueClientAddRequestOptions = {},
     ): Promise<RequestQueueClientAddRequestResult> {
+        // The id may come from queue contents someone else wrote: only ids in the API's grammar are sent.
         ow(
             request,
             ow.object.partialShape({
-                id: ow.string,
+                id: ow.string.matches(REQUEST_ID_REGEX),
             }),
         );
 
@@ -547,7 +550,7 @@ export class RequestQueueClient extends ResourceClient {
         );
 
         const response = await this.httpClient.call({
-            url: this._url(`requests/${request.id}`),
+            url: this._url(`requests/${toPathSegment(request.id)}`),
             method: 'PUT',
             timeout: Math.min(MEDIUM_TIMEOUT_MILLIS, this.timeoutMillis ?? Infinity),
             data: request,
@@ -569,7 +572,7 @@ export class RequestQueueClient extends ResourceClient {
         ow(id, ow.string);
 
         await this.httpClient.call({
-            url: this._url(`requests/${id}`),
+            url: this._url(`requests/${toPathSegment(id)}`),
             method: 'DELETE',
             timeout: Math.min(SMALL_TIMEOUT_MILLIS, this.timeoutMillis ?? Infinity),
             params: this._params({
@@ -615,7 +618,7 @@ export class RequestQueueClient extends ResourceClient {
         );
 
         const response = await this.httpClient.call({
-            url: this._url(`requests/${id}/lock`),
+            url: this._url(`requests/${toPathSegment(id)}/lock`),
             method: 'PUT',
             timeout: Math.min(MEDIUM_TIMEOUT_MILLIS, this.timeoutMillis ?? Infinity),
             params: this._params({
@@ -647,7 +650,7 @@ export class RequestQueueClient extends ResourceClient {
         );
 
         await this.httpClient.call({
-            url: this._url(`requests/${id}/lock`),
+            url: this._url(`requests/${toPathSegment(id)}/lock`),
             method: 'DELETE',
             timeout: Math.min(SMALL_TIMEOUT_MILLIS, this.timeoutMillis ?? Infinity),
             params: this._params({

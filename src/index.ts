@@ -19,6 +19,8 @@ export * from './resource_clients/request_queue';
 export * from './resource_clients/request_queue_collection';
 export * from './resource_clients/run';
 export * from './resource_clients/run_collection';
+export * from './resource_clients/automation';
+export * from './resource_clients/automation_collection';
 export * from './resource_clients/schedule';
 export * from './resource_clients/schedule_collection';
 export * from './resource_clients/store_collection';

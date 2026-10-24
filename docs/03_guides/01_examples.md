@@ -5,6 +5,8 @@ sidebar_label: Examples
 description: 'Practical code examples for common tasks with the Scrapely API client for JavaScript, including webhooks and datasets.'
 ---
 
+<!-- Derived from apify-client-js (docs/03_guides/01_examples.md), Copyright Apify Technologies s.r.o., Apache License 2.0. Modified by TeraShift GmbH. -->
+
 ## Passing an input to the Actor
 
 The fastest way to get results from an Actor is to pass input directly to the `call` function.

@@ -5,6 +5,8 @@ sidebar_label: Pagination
 description: 'Paginate through large result sets and use async iteration with the Scrapely API client for JavaScript.'
 ---
 
+<!-- Derived from apify-client-js (docs/02_concepts/04_pagination.md), Copyright Apify Technologies s.r.o., Apache License 2.0. Modified by TeraShift GmbH. -->
+
 import ApiLink from '@theme/ApiLink';
 
 Methods that return lists (such as `list()` or `listSomething()`) return a <ApiLink to="interface/PaginatedList">`PaginatedList`</ApiLink> object. Exceptions include `listKeys()` and `listHead()`, which use different pagination mechanisms.

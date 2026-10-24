@@ -5,6 +5,8 @@ sidebar_label: Usage patterns
 description: 'Learn the resource client and collection client patterns used by the Scrapely API client for JavaScript.'
 ---
 
+<!-- Derived from apify-client-js (docs/02_concepts/01_usage-patterns.md), Copyright Apify Technologies s.r.o., Apache License 2.0. Modified by TeraShift GmbH. -->
+
 import ApiLink from '@theme/ApiLink';
 
 The `ScrapelyClient` interface follows a generic pattern that applies to all of its components. By calling individual methods of `ScrapelyClient`, specific clients that target individual API resources are created. There are two types of those clients:

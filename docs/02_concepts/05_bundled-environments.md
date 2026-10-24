@@ -5,6 +5,8 @@ sidebar_label: Bundled environments
 description: 'Use the Scrapely API client for JavaScript in browsers, Cloudflare Workers, and other edge runtimes.'
 ---
 
+<!-- Derived from apify-client-js (docs/02_concepts/05_bundled-environments.md), Copyright Apify Technologies s.r.o., Apache License 2.0. Modified by TeraShift GmbH. -->
+
 :::warning Non-Node.js environments
 
 This applies only to non-Node.js environments (browsers, Cloudflare Workers, edge runtimes). If you're running on Node.js, you can skip this section.

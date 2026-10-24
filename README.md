@@ -1,3 +1,5 @@
+<!-- Derived from apify-client-js (README.md), Copyright Apify Technologies s.r.o., Apache License 2.0. Modified by TeraShift GmbH. -->
+
 # Scrapely API client for JavaScript
 
 [![npm version](https://badge.fury.io/js/scrapely-client.svg)](https://www.npmjs.com/package/scrapely-client)
@@ -39,6 +41,8 @@ const { defaultDatasetId } = await client.actor('my-user/my-cool-actor').call();
 // Fetches results from the Actor's dataset.
 const { items } = await client.dataset(defaultDatasetId).listItems();
 ```
+
+The client talks to `https://api.scrape.ly` unless you pass another `baseUrl` to the constructor. In Node.js, when `baseUrl` is not given, the `SCRAPELY_API_URL` environment variable sets the API URL (for example `SCRAPELY_API_URL=https://api-staging.scrape.ly`). `publicBaseUrl`, used for public storage links, keeps its own option and default. The browser bundle does not read environment variables.
 
 ## Features
 
@@ -137,6 +141,23 @@ const { items } = await lastSucceededRunClient.dataset().listItems();
 > The quick access to `dataset` and other storages directly from the run
 > client can now only be used with the `lastRun()` method, but the feature
 > will be available to all runs in the future.
+
+### Automations
+
+```js
+const automation = await client.automations().create({
+    title: 'Daily dentists',
+    trigger: { kind: 'schedule', cron: '0 9 * * *', timezone: 'Europe/Berlin' },
+    steps: [{ kind: 'savedInput', savedInputId: 'SAVED-INPUT-ID' }],
+    ai: { mode: 'summarize', prompt: 'List the new practices with their phone numbers.' },
+    deliveries: [{ channel: 'email' }],
+});
+// Runs it now and returns the automation run.
+const run = await client.automation(automation.id).run();
+```
+
+`client.automations()` also lists automations (`actorId`, `savedInputId` and `search` filters), and
+`client.automation(id)` gets, updates, deletes, duplicates and lists the runs of one.
 
 ### Pagination
 

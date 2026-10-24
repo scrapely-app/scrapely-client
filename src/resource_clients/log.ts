@@ -180,8 +180,9 @@ export class StreamedLog {
         try {
             await this.streamingTask;
         } catch (err) {
+            // Log redirection is best effort: a failed stream never fails the caller.
             if (!(err instanceof Error && err.name === 'AbortError')) {
-                throw err;
+                log.warning('Log redirection stopped due to error', err as Error);
             }
         } finally {
             this.streamingTask = null;
@@ -192,11 +193,11 @@ export class StreamedLog {
      * Get log stream from response and redirect it to another log.
      */
     private async streamLog(): Promise<void> {
-        const logStream = await this.logClient.stream({ raw: true });
-        if (!logStream) {
-            return;
-        }
         try {
+            const logStream = await this.logClient.stream({ raw: true });
+            if (!logStream) {
+                return;
+            }
             const lastChunkRemainder = await this.logStreamChunks(logStream);
             // Process whatever is left when exiting. Maybe it is incomplete, maybe it is last log without EOL.
             const lastMessage = Buffer.from(lastChunkRemainder).toString().trim();

@@ -4,7 +4,7 @@ import ow from 'ow';
 
 import type { RUN_GENERAL_ACCESS } from '@apify/consts';
 import { ACTOR_JOB_STATUSES, ACTOR_PERMISSION_LEVEL, META_ORIGINS } from '@apify/consts';
-import { Log } from '@apify/log';
+import defaultLog, { Log } from '@apify/log';
 
 import type { ApifyApiError } from '../apify_api_error';
 import type { ApiClientSubResourceOptions } from '../base/api_client';
@@ -266,13 +266,24 @@ export class ActorClient extends ResourceClient {
         // setting it up as a nested route under actor API.
         const newRunClient = this.apifyClient.run(id);
 
-        const streamedLog = await newRunClient.getStreamedLog({ toLog: options?.log });
-        streamedLog?.start();
+        // Log streaming is best effort: a refused or failed stream is logged and never fails the call.
+        let streamedLog: Awaited<ReturnType<typeof newRunClient.getStreamedLog>>;
+        try {
+            streamedLog = await newRunClient.getStreamedLog({ toLog: options?.log });
+            streamedLog?.start();
+        } catch (err) {
+            streamedLog = undefined;
+            defaultLog.warning('Could not start the run log stream', err as Error);
+        }
         return this.apifyClient
             .run(id)
             .waitForFinish({ waitSecs })
             .finally(async () => {
-                await streamedLog?.stop();
+                try {
+                    await streamedLog?.stop();
+                } catch (err) {
+                    defaultLog.warning('Could not stop the run log stream', err as Error);
+                }
             });
     }
 
@@ -658,18 +669,18 @@ export interface Actor {
 export interface ActorStats {
     /** Total number of builds created for this Actor */
     totalBuilds?: number; // owner only
-    /** Total number of times this Actor has been run */
-    totalRuns: number;
-    /** Total number of unique users who have run this Actor */
-    totalUsers: number;
-    /** Number of unique users in the last 7 days */
-    totalUsers7Days: number;
-    /** Number of unique users in the last 30 days */
+    /** Total number of times this Actor has been run. Owner only: null for anyone else. */
+    totalRuns: number | null;
+    /** Total number of unique users who have run this Actor. Owner only: null for anyone else. */
+    totalUsers: number | null;
+    /** Number of unique users in the last 7 days. Owner only: null for anyone else. */
+    totalUsers7Days: number | null;
+    /** Monthly active users: distinct users with a run in the last 30 days (every user, the owner and internal accounts included). Public. */
     totalUsers30Days: number;
-    /** Number of unique users in the last 90 days */
-    totalUsers90Days: number;
-    /** Total number of times this Actor was used via metamorph */
-    totalMetamorphs: number;
+    /** Number of unique users in the last 90 days. Owner only: null for anyone else. */
+    totalUsers90Days: number | null;
+    /** Total number of times this Actor was used via metamorph. Owner only: null for anyone else. */
+    totalMetamorphs: number | null;
     /** Timestamp when the last run was started */
     lastRunStartedAt: Date;
 }
@@ -1037,14 +1048,15 @@ export interface ActorDefinition {
 }
 
 interface CommonActorPricingInfo {
-    /** In [0, 1], fraction of pricePerUnitUsd that goes to the platform */
-    apifyMarginPercentage: number;
     /** When this pricing info record has been created */
     createdAt: Date;
     /** Since when is this pricing info record effective for a given Actor */
     startedAt: Date;
+    /** Returned only to the Actor owner */
     notifiedAboutFutureChangeAt?: Date;
+    /** Returned only to the Actor owner */
     notifiedAboutChangeAt?: Date;
+    /** Returned only to the Actor owner */
     reasonForChange?: string;
 }
 

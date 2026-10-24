@@ -8,6 +8,7 @@ import type { Log } from '@apify/log';
 import logger from '@apify/log';
 
 import { HttpClient } from './http_client';
+import { isNode } from './utils';
 import type { RequestInterceptorFunction } from './interceptors';
 import type { ChargingHooks } from './charging';
 import { createDatasetClient } from './charging';
@@ -25,6 +26,8 @@ import { RequestQueueClient } from './resource_clients/request_queue';
 import { RequestQueueCollectionClient } from './resource_clients/request_queue_collection';
 import { RunClient } from './resource_clients/run';
 import { RunCollectionClient } from './resource_clients/run_collection';
+import { AutomationClient } from './resource_clients/automation';
+import { AutomationCollectionClient } from './resource_clients/automation_collection';
 import { ScheduleClient } from './resource_clients/schedule';
 import { ScheduleCollectionClient } from './resource_clients/schedule_collection';
 import { StoreCollectionClient } from './resource_clients/store_collection';
@@ -97,8 +100,8 @@ export class ScrapelyClient {
         );
 
         const {
-            baseUrl = 'https://api.scrape.ly',
-            publicBaseUrl = 'https://api.scrape.ly',
+            baseUrl = apiUrlFromEnv() ?? DEFAULT_API_URL,
+            publicBaseUrl = DEFAULT_API_URL,
             maxRetries = 8,
             minDelayBetweenRetriesMillis = 500,
             requestInterceptors = [],
@@ -449,6 +452,35 @@ export class ScrapelyClient {
     }
 
     /**
+     * Returns a client for the automations in your account (Scrapely-only).
+     *
+     * An automation is a trigger (manual, schedule or another run finished), run steps,
+     * optional filters, an optional AI step and deliveries. Plain schedules are listed too.
+     *
+     * @returns A client for the Automations collection
+     */
+    automations(): AutomationCollectionClient {
+        return new AutomationCollectionClient(this._options());
+    }
+
+    /**
+     * Returns a client for a specific automation (Scrapely-only).
+     *
+     * Use this to get, update, delete, run or duplicate an automation and read its runs.
+     *
+     * @param id - Automation ID
+     * @returns A client for the specific automation
+     */
+    automation(id: string): AutomationClient {
+        ow(id, ow.string.nonEmpty);
+
+        return new AutomationClient({
+            id,
+            ...this._options(),
+        });
+    }
+
+    /**
      * Returns a client for accessing user data.
      *
      * By default, returns information about the current user (determined by the API token).
@@ -552,6 +584,18 @@ export class ScrapelyClient {
     }
 }
 
+/** Production Scrapely API, used when neither `baseUrl` nor `SCRAPELY_API_URL` is set. */
+const DEFAULT_API_URL = 'https://api.scrape.ly';
+
+/** Environment variable that sets the API URL when the `baseUrl` option is not given. */
+const API_URL_ENV_VAR = 'SCRAPELY_API_URL';
+
+function apiUrlFromEnv(): string | undefined {
+    if (!isNode()) return undefined;
+    const value = process.env[API_URL_ENV_VAR]?.trim();
+    return value || undefined;
+}
+
 /**
  * Alias for {@link ScrapelyClient}.
  */
@@ -561,7 +605,11 @@ export { ScrapelyClient as ApifyClient };
  * Configuration options for ScrapelyClient.
  */
 export interface ApifyClientOptions {
-    /** @default https://api.scrape.ly */
+    /**
+     * URL of the Scrapely API. When not set, the client uses the `SCRAPELY_API_URL`
+     * environment variable (Node.js only), then `https://api.scrape.ly`.
+     * @default process.env.SCRAPELY_API_URL || https://api.scrape.ly
+     */
     baseUrl?: string;
     /** @default https://api.scrape.ly */
     publicBaseUrl?: string;

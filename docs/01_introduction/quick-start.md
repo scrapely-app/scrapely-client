@@ -5,6 +5,8 @@ sidebar_label: Quick start
 description: 'Get started with the Scrapely API client for JavaScript by running an Actor and retrieving results from its dataset.'
 ---
 
+<!-- Derived from apify-client-js (docs/01_introduction/quick-start.md), Copyright Apify Technologies s.r.o., Apache License 2.0. Modified by TeraShift GmbH. -->
+
 import ApiLink from '@theme/ApiLink';
 
 Learn how to authenticate, run Actors, and retrieve results using the Scrapely API client for JavaScript.

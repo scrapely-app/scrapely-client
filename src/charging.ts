@@ -1,3 +1,5 @@
+import ow from 'ow';
+
 import type { ApiClientSubResourceOptions } from './base/api_client';
 import { DatasetClient } from './resource_clients/dataset';
 import { isNode } from './utils';
@@ -152,8 +154,21 @@ export class ChargingDatasetClient<
     }
 
     override async pushItems(items: string | Data | string[] | Data[]): Promise<void> {
+        // The same input check as the stock pushItems(), and every item must
+        // serialize, before the hooks charge for it: the push itself happens only
+        // after the charge and would fail with the items charged but not stored.
+        ow(items, ow.any(ow.object, ow.string, ow.array.ofType(ow.any(ow.object, ow.string))));
         const context = pushDataChargingContext.getStore();
         const normalizedItems = this.normalizeItems(items);
+        normalizedItems.forEach((item, index) => {
+            let json: string | undefined;
+            try {
+                json = JSON.stringify(item);
+            } catch (err) {
+                throw new Error(`Dataset item at index ${index} is not serializable to JSON: ${(err as Error).message}`);
+            }
+            if (json === undefined) throw new Error(`Dataset item at index ${index} is not serializable to JSON`);
+        });
 
         const result = await this.hooks.pushAndCharge({
             items: normalizedItems,

@@ -3,6 +3,7 @@
 import type { ApifyClient } from '../apify_client';
 import type { HttpClient } from '../http_client';
 import type { PaginatedResponse, PaginationOptions } from '../utils';
+import { toPathSegment } from '../utils';
 
 /** @private */
 export interface ApiClientOptions {
@@ -45,7 +46,8 @@ export abstract class ApiClient {
         const { baseUrl, publicBaseUrl, apifyClient, httpClient, resourcePath, id, params = {} } = options;
 
         this.id = id;
-        this.safeId = id && this._toSafeId(id);
+        // One path segment whatever the id holds: `..`, `?` or `#` must not retarget the call.
+        this.safeId = id && toPathSegment(this._toSafeId(id));
         this.baseUrl = baseUrl;
         this.publicBaseUrl = publicBaseUrl;
         this.resourcePath = resourcePath;

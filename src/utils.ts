@@ -359,6 +359,27 @@ export interface PaginatedList<Data> extends PaginatedResponse<Data> {
  */
 export type PaginatedIterator<T> = Promise<PaginatedList<T>> & AsyncIterable<T>;
 
+/**
+ * Percent-encodes a caller-supplied value so it stays a single URL path segment.
+ *
+ * Without this, a value carrying `/`, `?` or `#` would restructure the URL it is put into: it could reach a
+ * different endpoint, add its own query parameters, or be cut off at a fragment. `''`, `.` and `..` are
+ * rejected: a URL parser resolves dot segments even when percent-encoded, so they would land on a parent
+ * endpoint where the same verb acts on the whole resource.
+ */
+export function toPathSegment(value: string): string {
+    if (typeof value !== 'string') {
+        throw new TypeError(`Expected a string for a URL path segment, got ${typeof value}.`);
+    }
+    if (value === '' || value === '.' || value === '..') {
+        throw new Error(`"${value}" cannot be used as a URL path segment.`);
+    }
+    return encodeURIComponent(value);
+}
+
+/** Request ids the API accepts: letters, digits, `-`, `_` and `~`, at most 128 characters. */
+export const REQUEST_ID_REGEX = /^[A-Za-z0-9_~-]{1,128}$/;
+
 export function cast<T>(input: unknown): T {
     return input as T;
 }
