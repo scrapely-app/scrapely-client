@@ -32,6 +32,12 @@ overrides:
   basic-ftp: ^6.2.3
   adm-zip: ^0.6.1
   markdown-it: ^15.0.0
+  tinypool: ^2.1.2
+  sitemap: ^9.0.1
+  undici: ^7.30.1
+  "@swc/core": ^1.16.20
+  feed: 5.0.0
+  ip-address: ^10.7.5
 
 nodeLinker: hoisted
 linkWorkspacePackages: true

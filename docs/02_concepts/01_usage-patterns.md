@@ -40,9 +40,9 @@ const client = new ScrapelyClient({ token: 'MY-SCRAPELY-TOKEN' });
 
 // Resource clients accept an ID of the resource.
 const actorClient = client.actor('username/actor-name');
-// Fetches the john-doe/my-actor object from the API.
+// Fetches the username/actor-name object from the API.
 const myActor = await actorClient.get();
-// Starts the run of john-doe/my-actor and returns the Run object.
+// Starts the run of username/actor-name and returns the Run object.
 const myActorRun = await actorClient.start();
 ```
 
@@ -70,4 +70,4 @@ const lastSucceededRunClient = actorClient.lastRun({ status: 'SUCCEEDED' });
 const { items } = await lastSucceededRunClient.dataset().listItems();
 ```
 
-The quick access to `dataset` and other storage directly from the run client can be used with the <ApiLink to="class/ActorClient#lastRun">`lastRun()`</ApiLink> method.
+Every run client, from the <ApiLink to="class/ActorClient#lastRun">`lastRun()`</ApiLink> method or from `client.run(id)`, gives quick access to the run's `dataset()`, `keyValueStore()`, `requestQueue()` and `log()`.

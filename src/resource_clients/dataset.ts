@@ -3,7 +3,7 @@
 import ow from 'ow';
 
 import type { STORAGE_GENERAL_ACCESS } from '@apify/consts';
-import { createBoundStorageContentSignature } from '../storage_content_signature';
+import { createBoundStorageContentSignature, storageSignatureQuery } from '../storage_content_signature';
 
 import type { ApifyApiError } from '../apify_api_error';
 import type { ApiClientSubResourceOptions } from '../base/api_client';
@@ -15,7 +15,7 @@ import {
 } from '../base/resource_client';
 import type { ApifyRequestConfig, ApifyResponse } from '../http_client';
 import type { PaginatedIterator, PaginatedList, PaginationOptions } from '../utils';
-import { applyQueryParamsToUrl, cast, catchNotFoundOrThrow, pluckData } from '../utils';
+import { applyQueryParamsToUrl, cast, catchNotFoundOrThrow, newIdempotencyKey, pluckData } from '../utils';
 
 /**
  * Client for managing a specific Dataset.
@@ -279,17 +279,28 @@ export class DatasetClient<
     async pushItems(items: Data | Data[] | string | string[]): Promise<void> {
         ow(items, ow.any(ow.object, ow.string, ow.array.ofType(ow.any(ow.object, ow.string))));
 
-        await this.httpClient.call({
-            url: this._url('items'),
-            method: 'POST',
-            headers: {
-                'content-type': 'application/json; charset=utf-8',
-            },
-            data: items,
-            params: this._params(),
-            doNotRetryTimeouts: true, // see timeout handling in http-client
-            timeout: MEDIUM_TIMEOUT_MILLIS,
-        });
+        const push = async () =>
+            this.httpClient.call({
+                url: this._url('items'),
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json; charset=utf-8',
+                    // The server stores a push once per key, so a push resent after a 5xx or a dropped connection is safe.
+                    'idempotency-key': newIdempotencyKey(),
+                },
+                data: items,
+                params: this._params(),
+                doNotRetryTimeouts: true, // see timeout handling in http-client
+                timeout: MEDIUM_TIMEOUT_MILLIS,
+            });
+        try {
+            await push();
+        } catch (err) {
+            // The push failed mid-write and the server can't tell whether it was stored. Send it once more under a
+            // new key, as an unkeyed push would be resent: a second copy is possible, losing the items is not.
+            if ((err as ApifyApiError)?.type !== 'push-outcome-unknown') throw err;
+            await push();
+        }
     }
 
     /**
@@ -370,20 +381,20 @@ export class DatasetClient<
 
         const { expiresInSecs, ...queryOptions } = options;
 
-        let createdItemsPublicUrl = new URL(this._publicUrl('items'));
+        const createdItemsPublicUrl = applyQueryParamsToUrl(new URL(this._publicUrl('items')), queryOptions);
 
+        // Signed last: the signature binds every query parameter set above.
         if (dataset?.urlSigningSecretKey) {
             const signature = await createBoundStorageContentSignature({
                 resourceId: dataset.id,
                 urlSigningSecretKey: dataset.urlSigningSecretKey,
                 method: 'GET',
                 path: createdItemsPublicUrl.pathname,
+                query: storageSignatureQuery(createdItemsPublicUrl.search),
                 expiresInSecs,
             });
             createdItemsPublicUrl.searchParams.set('signature', signature);
         }
-
-        createdItemsPublicUrl = applyQueryParamsToUrl(createdItemsPublicUrl, queryOptions);
 
         return createdItemsPublicUrl.toString();
     }

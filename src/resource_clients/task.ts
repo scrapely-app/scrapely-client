@@ -9,7 +9,7 @@ import type { ApiClientSubResourceOptions } from '../base/api_client';
 import { ResourceClient } from '../base/resource_client';
 import type { ApifyRequestConfig } from '../http_client';
 import type { Dictionary } from '../utils';
-import { cast, catchNotFoundOrThrow, parseDateFields, pluckData, stringifyWebhooksToBase64 } from '../utils';
+import { cast, catchNotFoundOrThrow, newIdempotencyKey, parseDateFields, pluckData, stringifyWebhooksToBase64 } from '../utils';
 import type { ActorLastRunOptions, ActorRun, ActorStandby, ActorStartOptions } from './actor';
 import { RunClient } from './run';
 import { RunCollectionClient } from './run_collection';
@@ -183,6 +183,8 @@ export class TaskClient extends ResourceClient {
             stringifyFunctions: true,
             headers: {
                 'Content-Type': 'application/json',
+                // The server starts one run per key, so a start resent after a 5xx or a dropped connection is safe.
+                'idempotency-key': newIdempotencyKey(),
             },
         };
 

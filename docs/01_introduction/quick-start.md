@@ -15,7 +15,7 @@ Learn how to authenticate, run Actors, and retrieve results using the Scrapely A
 
 ## Step 1: Authenticate the client
 
-To use the client, you need an [API token](https://api.scrape.ly/platform/integrations/api#api-token). You can find your token under [Integrations](https://api.scrape.ly) tab in the Scrapely dashboard. Copy the token and initialize the client by providing the token (`MY-SCRAPELY-TOKEN`) as a parameter to the `ScrapelyClient` constructor.
+To use the client, you need an [API token](https://scrape.ly/docs/api-keys). You can create one in the dashboard under [Settings → API & Integrations](https://my.scrape.ly/settings/api). Copy the token and initialize the client by providing the token (`MY-SCRAPELY-TOKEN`) as a parameter to the `ScrapelyClient` constructor.
 
 ```js
 import { ScrapelyClient } from 'scrapely-client';
@@ -36,7 +36,7 @@ The API token is used to authorize your requests to the Scrapely API. You can be
 
 To start an Actor, call the <ApiLink to="class/ActorClient">`client.actor()`</ApiLink> method with the Actor's ID (e.g. `john-doe/my-cool-actor`). The Actor's ID is a combination of the Actor owner's username and the Actor name. You can run both your own Actors and Actors from Scrapely Store.
 
-To define the Actor's input, pass a JSON object to the <ApiLink to="class/ActorClient#call">`call()`</ApiLink> method that matches the Actor's [input schema](https://api.scrape.ly/platform/actors/development/actor-definition/input-schema). The input can include URLs to scrape, search terms, or other configuration data.
+To define the Actor's input, pass a JSON object to the <ApiLink to="class/ActorClient#call">`call()`</ApiLink> method that matches the Actor's [input schema](https://scrape.ly/docs/actors#input). The input can include URLs to scrape, search terms, or other configuration data.
 
 ```js
 import { ScrapelyClient } from 'scrapely-client';
@@ -68,7 +68,7 @@ console.log(items);
 
 :::note Dataset access
 
-Running an Actor might take time, depending on the Actor's complexity and the amount of data it processes. If you want only to get data and have an immediate response you should access the existing dataset of the finished [Actor run](https://api.scrape.ly/platform/actors/running/runs-and-builds#runs).
+Running an Actor might take time, depending on the Actor's complexity and the amount of data it processes. If you want only to get data and have an immediate response you should access the existing dataset of the finished [Actor run](https://scrape.ly/docs/run-actors).
 
 :::
 

@@ -29,7 +29,7 @@ const chunkSize = 100;
 const offset = 0;
 
 for await (const item of datasetClient.listItems({ limit, offset, chunkSize })) {
-    // Processs individual item
+    // Process individual item
     console.log(item);
 }
 ```

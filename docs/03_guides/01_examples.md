@@ -12,7 +12,7 @@ description: 'Practical code examples for common tasks with the Scrapely API cli
 The fastest way to get results from an Actor is to pass input directly to the `call` function.
 Input can be passed to `call` function and the reference of running Actor (or wait for finish) is available in `runData` variable.
 
-This example starts an Actor that scrapes 20 posts from the Instagram website based on the hashtag.
+This example starts the `echofield/instagram-hashtag-scraper` Actor from Scrapely Store to get 20 posts for a hashtag.
 
 ```javascript
 import { ScrapelyClient } from 'scrapely-client';
@@ -20,7 +20,7 @@ import { ScrapelyClient } from 'scrapely-client';
 // Client initialization with the API token
 const client = new ScrapelyClient({ token: 'MY_SCRAPELY_TOKEN' });
 
-const actorClient = client.actor('scrapely/instagram-hashtag-scraper');
+const actorClient = client.actor('echofield/instagram-hashtag-scraper');
 
 const input = { hashtags: ['rainbow'], resultsLimit: 20 };
 
@@ -32,7 +32,7 @@ console.log('Run data:');
 console.log(runData);
 ```
 
-To run multiple inputs with the same Actor, most convenient way is to create multiple [tasks](https://api.scrape.ly/platform/actors/running/tasks) with different inputs. Task input is persisted on Scrapely platform when task is created.
+To run multiple inputs with the same Actor, most convenient way is to create multiple [tasks](https://scrape.ly/docs/integrations#tasks) with different inputs. Task input is persisted on Scrapely platform when task is created.
 
 ```javascript
 import { ScrapelyClient } from 'scrapely-client';
@@ -46,7 +46,7 @@ const animalsHashtags = ['zebra', 'lion', 'hippo'];
 // Tasks are saved in the Scrapely platform and can be run multiple times.
 const socialsTasksPromises = animalsHashtags.map((hashtag) =>
     client.tasks().create({
-        actId: 'scrapely/instagram-hashtag-scraper',
+        actId: 'echofield/instagram-hashtag-scraper',
         name: `hashtags-${hashtag}`,
         input: { hashtags: [hashtag], resultsLimit: 20 },
         options: { memoryMbytes: 1024 },
@@ -65,7 +65,7 @@ await Promise.all(createdTasks.map((task) => client.task(task.id).call()));
 
 ## Getting latest data from an Actor, joining datasets
 
-Actor data are stored to [datasets](https://api.scrape.ly/platform/storage/dataset). Datasets can be retrieved from Actor runs. Dataset items can be listed with pagination. Also, datasets can be merged together to make analysis further on with single file as dataset can be exported to various data format (CSV, JSON, XSLX, XML). [Integrations](https://api.scrape.ly/platform/integrations) can do the trick as well.
+Actor data are stored to [datasets](https://scrape.ly/docs/storage#datasets). Datasets can be retrieved from Actor runs. Dataset items can be listed with pagination. Also, datasets can be merged together to make analysis further on with single file as dataset can be exported to various data format (CSV, JSON, XSLX, XML). [Integrations](https://scrape.ly/docs/integrations-overview) can do the trick as well.
 
 ```javascript
 import { ScrapelyClient } from 'scrapely-client';
@@ -73,7 +73,7 @@ import { ScrapelyClient } from 'scrapely-client';
 // Client initialization with the API token
 const client = new ScrapelyClient({ token: 'MY_SCRAPELY_TOKEN' });
 
-const actorClient = client.actor('scrapely/instagram-hashtag-scraper');
+const actorClient = client.actor('echofield/instagram-hashtag-scraper');
 
 const actorRuns = actorClient.runs();
 
@@ -98,7 +98,7 @@ for (const datasetItem of actorDatasets.items) {
 
 ## Handling webhooks
 
-[Webhooks](https://api.scrape.ly/platform/integrations/webhooks) can be used to get notifications about Actor runs.
+[Webhooks](https://scrape.ly/docs/integrations#webhooks) can be used to get notifications about Actor runs.
 For example, a webhook can be triggered when an Actor run finishes successfully.
 Webhook can receive dataset ID for further processing.
 
@@ -114,7 +114,7 @@ const webhooksClient = client.webhooks();
 
 await webhooksClient.create({
     description: 'Instagram hashtag actor succeeded',
-    condition: { actorId: 'reGe1ST3OBgYZSsZJ' }, // Actor ID of scrapely/instagram-hashtag-scraper
+    condition: { actorId: 'echofield/instagram-hashtag-scraper' }, // Actor ID or username/actor-name
     // Request URL can be generated using https://webhook.site. Any REST server can be used
     requestUrl: 'https://webhook.site/CUSTOM_WEBHOOK_ID',
     eventTypes: ['ACTOR.RUN.SUCCEEDED'],
@@ -136,14 +136,14 @@ const PORT = 3000;
 // Tell express to use body-parser's JSON parsing
 app.use(bodyParser.json());
 
-app.post('scrapely-webhook', async (req, res) => {
-    // Log the payload from the webhook
+app.post('/scrapely-webhook', async (req, res) => {
+    // Log the payload from the webhook. By default `resource` is the run object.
     console.log(req.body);
 
-    const runDataset = await client.dataset(req.body.resource.defaultDatasetId);
+    const runDataset = client.dataset(req.body.resource.defaultDatasetId);
 
-    // e.g. Save dataset locally as JSON
-    await runDataset.downloadItems(DownloadItemsFormat.JSON);
+    // e.g. Download the dataset items as a JSON buffer
+    const itemsJson = await runDataset.downloadItems(DownloadItemsFormat.JSON);
 
     // Respond to the webhook
     res.send('Webhook received');

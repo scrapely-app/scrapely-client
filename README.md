@@ -6,7 +6,7 @@
 [![Downloads](https://img.shields.io/npm/dm/scrapely-client.svg)](https://www.npmjs.com/package/scrapely-client)
 [![License](https://img.shields.io/npm/l/scrapely-client)](./LICENSE)
 
-`scrapely-client` is the official library to access the [Scrapely API](https://api.scrape.ly) from your
+`scrapely-client` is the official library to access the [Scrapely API](https://scrape.ly/docs/api-overview) from your
 JavaScript applications. It runs both in Node.js and browser and provides
 useful features like automatic retries and convenience functions that improve the experience of
 using the Scrapely API.
@@ -43,6 +43,7 @@ const { items } = await client.dataset(defaultDatasetId).listItems();
 ```
 
 The client talks to `https://api.scrape.ly` unless you pass another `baseUrl` to the constructor. In Node.js, when `baseUrl` is not given, the `SCRAPELY_API_URL` environment variable sets the API URL (for example `SCRAPELY_API_URL=https://api-staging.scrape.ly`). `publicBaseUrl`, used for public storage links, keeps its own option and default. The browser bundle does not read environment variables.
+Create an API token in the dashboard under **Settings → API & Integrations**.
 
 ## Features
 
@@ -68,7 +69,8 @@ options of the `ScrapelyClient` constructor.
 Some actions can't be performed by the API itself, such as indefinite waiting for an Actor run to finish
 (because of network timeouts). The client provides convenient `call()` and `waitForFinish()` functions that do that.
 Key-value store records can be retrieved as objects, buffers or streams via the respective options, dataset items
-can be fetched as individual objects or serialized data and we plan to add better stream support and async iterators.
+can be fetched as individual objects or serialized data, and list methods such as `listItems()` can be iterated with
+`for await`.
 
 ## Usage concepts
 
@@ -138,9 +140,8 @@ const lastSucceededRunClient = actorClient.lastRun({ status: 'SUCCEEDED' });
 const { items } = await lastSucceededRunClient.dataset().listItems();
 ```
 
-> The quick access to `dataset` and other storages directly from the run
-> client can now only be used with the `lastRun()` method, but the feature
-> will be available to all runs in the future.
+> Every run client, from `lastRun()` or `client.run(id)`, gives quick access to the run's
+> `dataset()`, `keyValueStore()`, `requestQueue()` and `log()`.
 
 ### Automations
 
@@ -174,11 +175,11 @@ The package includes a pre-built browser bundle that is automatically resolved b
 import { ScrapelyClient } from 'scrapely-client/browser';
 ```
 
-For edge runtimes like Cloudflare Workers, you may need to enable Node compatibility (e.g. `node_compat = true` in `wrangler.toml`). Note that some Node-specific features (streaming, proxy support) are not available in the bundle.
+For edge runtimes like Cloudflare Workers, you may need to enable Node compatibility (e.g. `compatibility_flags = ["nodejs_compat"]` in `wrangler.toml`; it is on by default from compatibility date 2026-08-04). Note that some Node-specific features (streaming, proxy support) are not available in the bundle.
 
 ## API Reference
 
-All public classes, methods and their parameters can be inspected in the [API reference](https://api.scrape.ly).
+Classes, methods and their options are described in the [JavaScript client guide](https://scrape.ly/docs/client-js).
 
 ## License
 

@@ -7,7 +7,7 @@ import type { JsonValue } from 'type-fest';
 
 import type { STORAGE_GENERAL_ACCESS } from '@apify/consts';
 import log from '@apify/log';
-import { createBoundStorageContentSignature } from '../storage_content_signature';
+import { createBoundStorageContentSignature, storageSignatureQuery } from '../storage_content_signature';
 
 import type { ApifyApiError } from '../apify_api_error';
 import type { ApiClientSubResourceOptions } from '../base/api_client';
@@ -226,6 +226,7 @@ export class KeyValueStoreClient extends ResourceClient {
                 method: 'GET',
                 path: recordPublicUrl.pathname,
                 recordKey: key,
+                query: storageSignatureQuery(recordPublicUrl.search),
                 expiresInSecs: options.expiresInSecs,
             });
             recordPublicUrl.searchParams.append('signature', signature);
@@ -272,20 +273,20 @@ export class KeyValueStoreClient extends ResourceClient {
 
         const { expiresInSecs, ...queryOptions } = options;
 
-        let createdPublicKeysUrl = new URL(this._publicUrl('keys'));
+        const createdPublicKeysUrl = applyQueryParamsToUrl(new URL(this._publicUrl('keys')), queryOptions);
 
+        // Signed last: the signature binds every query parameter set above.
         if (store?.urlSigningSecretKey) {
             const signature = await createBoundStorageContentSignature({
                 resourceId: store.id,
                 urlSigningSecretKey: store.urlSigningSecretKey,
                 method: 'GET',
                 path: createdPublicKeysUrl.pathname,
+                query: storageSignatureQuery(createdPublicKeysUrl.search),
                 expiresInSecs,
             });
             createdPublicKeysUrl.searchParams.set('signature', signature);
         }
-
-        createdPublicKeysUrl = applyQueryParamsToUrl(createdPublicKeysUrl, queryOptions);
 
         return createdPublicKeysUrl.toString();
     }

@@ -11,11 +11,11 @@ description: 'The official JavaScript library to access the Scrapely API, with a
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
-The Scrapely API client is the official library to access the [Scrapely REST API](https://api.scrape.ly/api/v2) from your JavaScript/TypeScript applications. It runs both in Node.js and browser and provides useful features like automatic retries and convenience functions that improve the experience of using the Scrapely API.
+The Scrapely API client is the official library to access the [Scrapely REST API](https://scrape.ly/docs/api-overview) from your JavaScript/TypeScript applications. It runs both in Node.js and browser and provides useful features like automatic retries and convenience functions that improve the experience of using the Scrapely API.
 
 The client simplifies interaction with the Scrapely platform by providing:
 
-- Intuitive methods for working with [Actors](https://api.scrape.ly/platform/actors), [datasets](https://api.scrape.ly/platform/storage/dataset), [key-value stores](https://api.scrape.ly/platform/storage/key-value-store), and other Scrapely resources
+- Intuitive methods for working with [Actors](https://scrape.ly/docs/actors), [datasets](https://scrape.ly/docs/storage#datasets), [key-value stores](https://scrape.ly/docs/storage#key-value-stores), and other Scrapely resources
 - Intelligent parsing of API responses and rich error messages for debugging
 - Built-in [exponential backoff](../02_concepts/02_error-handling.md#retries-with-exponential-backoff) for failed requests
 - Full TypeScript support with comprehensive type definitions
@@ -79,9 +79,8 @@ const client = new ScrapelyClient({
 });
 
 // Start an Actor and wait for it to finish
-const run = await client.actor('my-user/web-scraper').call({
+const run = await client.actor('username/actor-name').call({
     startUrls: [{ url: 'https://example.com' }],
-    maxCrawlPages: 10,
 });
 
 // Get results from the Actor's dataset
@@ -89,4 +88,4 @@ const { items } = await client.dataset(run.defaultDatasetId).listItems();
 console.log(items);
 ```
 
-> You can find your API token in the [Integrations section](https://api.scrape.ly) of the Scrapely dashboard. The client sends requests to `https://api.scrape.ly` unless you pass another `baseUrl` or, in Node.js, set the `SCRAPELY_API_URL` environment variable (the `baseUrl` option wins). See the [Quick start guide](./quick-start.md) for more details on authentication.
+> You can create an API token in the dashboard under [Settings → API & Integrations](https://my.scrape.ly/settings/api). The client sends requests to `https://api.scrape.ly` unless you pass another `baseUrl` or, in Node.js, set the `SCRAPELY_API_URL` environment variable (the `baseUrl` option wins). See the [Quick start guide](./quick-start.md) for more details on authentication.

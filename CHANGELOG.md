@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.25.13] - 2026-11-02
+
+- Run starts (`actor.start`, `actor.call`, `task.start`, `task.call`), `actor.build` and `dataset.pushItems` send an `Idempotency-Key` header, so a request resent after a 5xx or a dropped connection starts one run or build and stores the items once.
+- Any other POST or PATCH without an `Idempotency-Key` is no longer resent after a 5xx or a connection that dropped mid-request, since it may already have been applied. Rate limits (429), failures before the request was sent, request queue adds (de-duplicated by `uniqueKey`), request unlocks, head locks and run aborts are still retried.
+- A keyed request answered with 409 `idempotency-key-in-progress` (the first request with that key is still being applied) is resent until it gets that request's answer; a 503 `push-outcome-unknown` is not resent, since no resend can change it.
+
 ## [2.25.12] - 2026-10-24
 
 - In Node.js, the `SCRAPELY_API_URL` environment variable sets the API URL when the `baseUrl` option is not given; `baseUrl` still wins, and without either the client uses `https://api.scrape.ly`. An empty value is ignored. `publicBaseUrl` is unchanged, and the browser bundle does not read environment variables.

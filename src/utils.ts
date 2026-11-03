@@ -212,6 +212,16 @@ export function sliceArrayByByteLength<T>(array: T[], maxByteLength: number, sta
     return slicedArray;
 }
 
+/**
+ * A fresh `Idempotency-Key` for one call. The same request config (and so the same key) is reused
+ * on every retry, so the server applies a resent POST once.
+ */
+export function newIdempotencyKey(): string {
+    const { crypto } = globalThis as { crypto?: { randomUUID?: () => string } };
+    if (crypto?.randomUUID) return crypto.randomUUID();
+    return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+}
+
 export function isNode(): boolean {
     if (typeof BROWSER_BUILD !== 'undefined') return false;
     return !!(typeof process !== 'undefined' && process.versions && process.versions.node);

@@ -10,7 +10,7 @@ import type { ApifyApiError } from '../apify_api_error';
 import type { ApiClientSubResourceOptions } from '../base/api_client';
 import { ResourceClient } from '../base/resource_client';
 import type { ApifyRequestConfig } from '../http_client';
-import { cast, catchNotFoundOrThrow, parseDateFields, pluckData, stringifyWebhooksToBase64 } from '../utils';
+import { cast, catchNotFoundOrThrow, newIdempotencyKey, parseDateFields, pluckData, stringifyWebhooksToBase64 } from '../utils';
 import type { ActorVersion } from './actor_version';
 import { ActorVersionClient } from './actor_version';
 import { ActorVersionCollectionClient } from './actor_version_collection';
@@ -191,9 +191,12 @@ export class ActorClient extends ResourceClient {
             // Internal property. Tells the request serialization interceptor
             // to stringify functions to JSON, instead of omitting them.
             stringifyFunctions: true,
+            // The server starts one run per key, so a start resent after a 5xx or a dropped connection is safe.
+            headers: { 'idempotency-key': newIdempotencyKey() },
         };
         if (options.contentType) {
             request.headers = {
+                ...request.headers,
                 'content-type': options.contentType,
             };
         }
@@ -389,6 +392,8 @@ export class ActorClient extends ResourceClient {
         const response = await this.httpClient.call({
             url: this._url('builds'),
             method: 'POST',
+            // One build per key (same contract as run starts), so a resent build start is safe.
+            headers: { 'idempotency-key': newIdempotencyKey() },
             params: this._params({
                 version: versionNumber,
                 ...options,

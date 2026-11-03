@@ -19,6 +19,6 @@ The package ships a pre-built browser bundle that is automatically resolved when
 import { ScrapelyClient } from 'scrapely-client/browser';
 ```
 
-For Cloudflare Workers or other edge runtimes that don't provide Node built-ins, you may need to enable Node compatibility in your runtime config (e.g. `node_compat = true`.
+For Cloudflare Workers or other edge runtimes that don't provide Node built-ins, you may need to enable Node compatibility in your runtime config (for Cloudflare Workers, the `nodejs_compat` compatibility flag, which is on by default from compatibility date 2026-08-04).
 
 Note that some Node-specific features (streaming APIs, proxy) are not available in the browser bundle.

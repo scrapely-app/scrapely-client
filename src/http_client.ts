@@ -22,6 +22,26 @@ const { version } = getVersionData();
 
 const RATE_LIMIT_EXCEEDED_STATUS_CODE = 429;
 
+// Failures that happen before the request reaches the server, so resending can't apply it twice.
+const NOT_SENT_ERROR_CODES = new Set(['ECONNREFUSED', 'ENOTFOUND', 'EAI_AGAIN', 'EHOSTUNREACH', 'ENETUNREACH']);
+
+// POSTs that are safe to resend without a key: request queue adds (the queue keeps one request per uniqueKey),
+// unlocks and aborts (repeating them changes nothing) and head locks (a repeat only locks more requests until the
+// lock expires). A run's default queue is also reached as /actor-runs/<id>/request-queue.
+const SAFE_TO_RESEND_POST_PATH_RE =
+    /\/(?:request-queues\/[^/]+|actor-runs\/[^/]+\/request-queue)\/(?:requests(?:\/batch|\/unlock)?|head\/lock)\/?$|\/abort\/?$/;
+// Storage get-or-create by name: a resend returns the storage the first request created.
+const STORAGE_COLLECTION_PATH_RE = /\/(?:datasets|key-value-stores|request-queues)\/?$/;
+
+// Answers from the proxy in front of the API when the API did not take the request (e.g. restarting during a deploy),
+// so resending can't apply it twice.
+const NOT_APPLIED_STATUS_CODES = new Set([502, 503]);
+
+// Keyed requests: the first request with the key is still being applied, so a resend gets its answer shortly.
+const KEY_IN_PROGRESS_ERROR_TYPE = 'idempotency-key-in-progress';
+// Keyed requests: the server can't tell whether the first request was applied, and no resend changes that.
+const OUTCOME_UNKNOWN_ERROR_TYPE = 'push-outcome-unknown';
+
 export class HttpClient {
     stats: Statistics;
 
@@ -227,9 +247,18 @@ export class HttpClient {
             }
 
             const apiError = new ApifyApiError(response, attempt);
-            if (this._isStatusCodeRetryable(response.status)) {
+            const keyInProgress = apiError.type === KEY_IN_PROGRESS_ERROR_TYPE && this._hasIdempotencyKey(config);
+            if ((this._isStatusCodeRetryable(response.status) || keyInProgress) && apiError.type !== OUTCOME_UNKNOWN_ERROR_TYPE) {
                 if (requestIsStream) {
                     this._informAboutStreamNoRetry();
+                } else if (
+                    response.status !== RATE_LIMIT_EXCEEDED_STATUS_CODE &&
+                    !NOT_APPLIED_STATUS_CODES.has(response.status) &&
+                    this._isUnsafeToResend(config)
+                ) {
+                    this.logger.debug('Request may have been applied; not resending without an idempotency key', {
+                        statusCode: response.status,
+                    });
                 } else {
                     // allow a retry
                     throw apiError;
@@ -259,11 +288,36 @@ export class HttpClient {
         if (this._isRetryableError(err)) {
             if (isStream(config.data)) {
                 this._informAboutStreamNoRetry();
+            } else if (this._isUnsafeToResend(config) && !NOT_SENT_ERROR_CODES.has(err.code ?? '')) {
+                this.logger.debug('Request may have been applied; not resending without an idempotency key', {
+                    code: err.code,
+                });
             } else {
                 throw err;
             }
         }
         return stopTrying(err);
+    }
+
+    /**
+     * Whether resending the request after an ambiguous failure could apply it twice.
+     *
+     * A POST or PATCH without an `Idempotency-Key` header may already have been applied when the server answers 5xx or
+     * the connection drops mid-request, e.g. a dataset push stored twice or a second run started. Request queue adds,
+     * unlocks, head locks and aborts are always safe (see SAFE_TO_RESEND_POST_PATH_RE), and so is a storage
+     * get-or-create by name.
+     */
+    private _isUnsafeToResend(config: ApifyRequestConfig) {
+        const method = (config.method ?? 'get').toUpperCase();
+        if (method !== 'POST' && method !== 'PATCH') return false;
+        const path = (config.url ?? '').split('?')[0];
+        if (SAFE_TO_RESEND_POST_PATH_RE.test(path)) return false;
+        if (method === 'POST' && STORAGE_COLLECTION_PATH_RE.test(path) && config.params?.name) return false;
+        return !this._hasIdempotencyKey(config);
+    }
+
+    private _hasIdempotencyKey(config: ApifyRequestConfig) {
+        return AxiosHeaders.from(config.headers as ConstructorParameters<typeof AxiosHeaders>[0]).has('idempotency-key');
     }
 
     /**
@@ -305,8 +359,9 @@ export class HttpClient {
     }
 
     /**
-     * We retry 429 (rate limit) and 500+.
-     * For status codes 300-499 (except 429) we do not retry the request,
+     * We retry 429 (rate limit), 502/503 and other 500+ (only when resending is safe, see _isUnsafeToResend), and a
+     * keyed request's 409 while the first request with that key is still being applied.
+     * For other status codes 300-499 we do not retry the request,
      * because it's probably caused by invalid url (redirect 3xx) or invalid user input (4xx).
      */
     private _isStatusCodeRetryable(statusCode: number) {
