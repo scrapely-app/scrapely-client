@@ -37,6 +37,20 @@ const STORAGE_COLLECTION_PATH_RE = /\/(?:datasets|key-value-stores|request-queue
 // so resending can't apply it twice.
 const NOT_APPLIED_STATUS_CODES = new Set([502, 503]);
 
+// The API answers its own 502/504 as 503 with the original in this header, so the edge (Cloudflare) keeps the
+// error body. Retry decisions use the original: a 504 (e.g. a Standby container timeout) may have been applied.
+const ORIGINAL_STATUS_HEADER = 'x-scrapely-status';
+
+/** The status to act on: the original 502/504 of a 503 that carries X-Scrapely-Status, else the HTTP status. */
+export function effectiveResponseStatus(status: number, headers?: Record<string, unknown> | null): number {
+    if (status !== 503 || !headers) return status;
+    const raw = typeof (headers as { get?: unknown }).get === 'function'
+        ? (headers as { get: (k: string) => unknown }).get(ORIGINAL_STATUS_HEADER)
+        : headers[ORIGINAL_STATUS_HEADER];
+    const original = Number(Array.isArray(raw) ? raw[0] : raw);
+    return original === 502 || original === 504 ? original : status;
+}
+
 // Keyed requests: the first request with the key is still being applied, so a resend gets its answer shortly.
 const KEY_IN_PROGRESS_ERROR_TYPE = 'idempotency-key-in-progress';
 // Keyed requests: the server can't tell whether the first request was applied, and no resend changes that.
@@ -253,7 +267,7 @@ export class HttpClient {
                     this._informAboutStreamNoRetry();
                 } else if (
                     response.status !== RATE_LIMIT_EXCEEDED_STATUS_CODE &&
-                    !NOT_APPLIED_STATUS_CODES.has(response.status) &&
+                    !NOT_APPLIED_STATUS_CODES.has(effectiveResponseStatus(response.status, response.headers)) &&
                     this._isUnsafeToResend(config)
                 ) {
                     this.logger.debug('Request may have been applied; not resending without an idempotency key', {

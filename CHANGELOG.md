@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.25.14] - 2026-11-04
+
+- The API now sends its own 502 and 504 answers as 503 with the original status in the `X-Scrapely-Status` header (so the error body reaches you through Cloudflare). A 503 with `X-Scrapely-Status: 504` is treated like a 504: a POST or PATCH without an `Idempotency-Key` is not resent after it, since it may already have been applied. A 503 with `X-Scrapely-Status: 502` is retried like a 502.
+
 ## [2.25.13] - 2026-11-02
 
 - Run starts (`actor.start`, `actor.call`, `task.start`, `task.call`), `actor.build` and `dataset.pushItems` send an `Idempotency-Key` header, so a request resent after a 5xx or a dropped connection starts one run or build and stores the items once.
