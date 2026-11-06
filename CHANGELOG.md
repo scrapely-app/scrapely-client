@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.25.15] - 2026-11-06
+
+- Out of credit: the API's 402 for the account balance keeps its type and status and now carries the way out in `error.data` (typed as `InsufficientCreditErrorData`): a Free account gets `unlock` (Starter, its price and credit, and `checkoutUrl`), a paid account `topUpUrl`, plus the account's newest held run (`heldItems`, `heldUntil`, `runId`) when it has one. `isInsufficientCreditError(err)` and `creditUnlockUrl(err)` read it.
+- `ActorRun.held` (`ActorRunHeld`): results a run found after the free credit ran out, kept out of its dataset until unlocked. `run.waitForFinish()` (and so `actor.call()` / `task.call()`) logs one warning with the count and the unlock link when the run has held results.
+
 ## [2.25.14] - 2026-11-04
 
 - The API now sends its own 502 and 504 answers as 503 with the original status in the `X-Scrapely-Status` header (so the error body reaches you through Cloudflare). A 503 with `X-Scrapely-Status: 504` is treated like a 504: a POST or PATCH without an `Idempotency-Key` is not resent after it, since it may already have been applied. A 503 with `X-Scrapely-Status: 502` is retried like a 502.

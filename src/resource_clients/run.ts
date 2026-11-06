@@ -8,6 +8,7 @@ import { LEVELS, Log } from '@apify/log';
 
 import type { ApiClientOptionsWithOptionalResourcePath } from '../base/api_client';
 import { ResourceClient } from '../base/resource_client';
+import { heldRunWarning } from '../credit_unlock';
 import type { ApifyResponse } from '../http_client';
 import { cast, isNode, parseDateFields, pluckData } from '../utils';
 import type { ActorRun } from './actor';
@@ -351,7 +352,11 @@ export class RunClient extends ResourceClient {
             }),
         );
 
-        return this._waitForFinish(options);
+        const run = await this._waitForFinish<ActorRun>(options);
+        // Results held because the free credit ran out: one line with the count and the unlock link.
+        const warning = heldRunWarning(run);
+        if (warning) this.apifyClient.logger.warning(warning);
+        return run;
     }
 
     /**

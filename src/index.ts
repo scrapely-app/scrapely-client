@@ -2,6 +2,7 @@
 // Modified by TeraShift GmbH. See the LICENSE and NOTICE files.
 export * from './apify_client';
 export * from './charging';
+export * from './credit_unlock';
 export * from './resource_clients/actor';
 export * from './resource_clients/actor_collection';
 export * from './resource_clients/actor_env_var';

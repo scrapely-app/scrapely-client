@@ -9,6 +9,7 @@ import defaultLog, { Log } from '@apify/log';
 import type { ApifyApiError } from '../apify_api_error';
 import type { ApiClientSubResourceOptions } from '../base/api_client';
 import { ResourceClient } from '../base/resource_client';
+import type { ActorRunHeld } from '../credit_unlock';
 import type { ApifyRequestConfig } from '../http_client';
 import { cast, catchNotFoundOrThrow, newIdempotencyKey, parseDateFields, pluckData, stringifyWebhooksToBase64 } from '../utils';
 import type { ActorVersion } from './actor_version';
@@ -903,6 +904,8 @@ export interface ActorRun extends ActorRunListItem {
     chargedEventCounts?: Record<string, number>;
     generalAccess?: RUN_GENERAL_ACCESS | null;
     storageIds?: ActorRunStorageIds;
+    /** Results held because the account's free credit ran out (owner only; absent when nothing is held). */
+    held?: ActorRunHeld | null;
 }
 
 /**
