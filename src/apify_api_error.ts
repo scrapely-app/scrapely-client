@@ -23,7 +23,7 @@ const CLIENT_METHOD_REGEX = /at( async)? ([A-Za-z]+(Collection)?Client)\._?([A-Z
  * errors, which are thrown immediately, because a correction by the user is
  * needed.
  */
-export class ApifyApiError extends Error {
+export class ScrapelyApiError extends Error {
     override name: string;
 
     /**
@@ -109,7 +109,8 @@ export class ApifyApiError extends Error {
         }
         super(message);
 
-        this.name = this.constructor.name;
+        // A fixed name: a minified bundle would otherwise rename the class in printed errors.
+        this.name = 'ScrapelyApiError';
         this.clientMethod = this._extractClientAndMethodFromStack();
         this.statusCode = response.status;
         this.type = type;
@@ -148,7 +149,7 @@ export class ApifyApiError extends Error {
      *
      * Example:
      *
-     * ApifyApiError: Actor task was not found
+     * ScrapelyApiError: Actor task was not found
      *   clientMethod: TaskClient.start
      *   statusCode: 404
      *   type: record-not-found
@@ -172,6 +173,6 @@ export class ApifyApiError extends Error {
     }
 }
 
-// Scrapely-named alias for the `ApifyApiError` class, so code can use the platform name.
-export const ScrapelyApiError = ApifyApiError;
-export type ScrapelyApiError = ApifyApiError;
+// Compatibility alias (the same class): existing imports, `instanceof ApifyApiError` checks and types keep working.
+export const ApifyApiError = ScrapelyApiError;
+export type ApifyApiError = ScrapelyApiError;

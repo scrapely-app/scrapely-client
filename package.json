@@ -1,6 +1,6 @@
 {
     "name": "scrapely-client",
-    "version": "2.25.15",
+    "version": "2.25.16",
     "description": "Scrapely API client for JavaScript",
     "main": "dist/index.js",
     "module": "dist/index.mjs",

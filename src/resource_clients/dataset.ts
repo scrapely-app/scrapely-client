@@ -298,6 +298,9 @@ export class DatasetClient<
         } catch (err) {
             // The push failed mid-write and the server can't tell whether it was stored. Send it once more under a
             // new key, as an unkeyed push would be resent: a second copy is possible, losing the items is not.
+            // If the resend fails too, its error is passed on as it is: charging voids the charge of a push that
+            // failed, even though the first attempt may have stored the items (a few possibly free rows, never a
+            // charge for rows that may not have been stored).
             if ((err as ApifyApiError)?.type !== 'push-outcome-unknown') throw err;
             await push();
         }

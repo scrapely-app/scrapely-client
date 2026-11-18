@@ -158,7 +158,14 @@ export class ChargingDatasetClient<
         // serialize, before the hooks charge for it: the push itself happens only
         // after the charge and would fail with the items charged but not stored.
         ow(items, ow.any(ow.object, ow.string, ow.array.ofType(ow.any(ow.object, ow.string))));
+        // Decided per push, not when the client was created: pricing loads and the
+        // spending limit is reached after a client may already exist. A push made
+        // by Actor.pushData(items, eventName) is always charged for that event.
         const context = pushDataChargingContext.getStore();
+        if (!context?.eventName && !this.hooks.shouldChargeDatasetPushes(this.id ?? '')) {
+            await super.pushItems(items);
+            return;
+        }
         const normalizedItems = this.normalizeItems(items);
         normalizedItems.forEach((item, index) => {
             let json: string | undefined;
@@ -189,9 +196,9 @@ export class ChargingDatasetClient<
 }
 
 /**
- * Returns a charging-aware dataset client when charging is enabled for `id`
- * (hooks configured, `id` is the default dataset, and the hooks confirm the
- * dataset should be charged), or a stock {@link DatasetClient} otherwise.
+ * Returns a charging-aware dataset client for the default dataset when charging
+ * hooks are configured (it asks the hooks on every push whether to charge), or
+ * a stock {@link DatasetClient} otherwise.
  *
  * @private
  */
@@ -205,7 +212,7 @@ export function createDatasetClient<
 ): DatasetClient<Data> {
     const isDefaultDataset = id === defaultDatasetId;
 
-    if (chargingHooks && isDefaultDataset && chargingHooks.shouldChargeDatasetPushes(id)) {
+    if (chargingHooks && isDefaultDataset) {
         const client = new ChargingDatasetClient<Data>({ id, ...options, hooks: chargingHooks });
         Object.assign(client as object, { [USES_PUSH_DATA_INTERCEPTION]: true });
         return client;

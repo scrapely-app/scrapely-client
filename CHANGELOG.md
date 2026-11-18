@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.25.16] - 2026-11-18
+
+- Charged dataset pushes: the default dataset's client asks the charging hooks on every push whether to charge, not only when the client was created, so pricing that loads later and a spending limit reached during the run apply to the next push. A push made by `Actor.pushData(items, eventName)` is always charged for that event.
+
 ## [2.25.15] - 2026-11-06
 
 - Out of credit: the API's 402 for the account balance keeps its type and status and now carries the way out in `error.data` (typed as `InsufficientCreditErrorData`): a Free account gets `unlock` (Starter, its price and credit, and `checkoutUrl`), a paid account `topUpUrl`, plus the account's newest held run (`heldItems`, `heldUntil`, `runId`) when it has one. `isInsufficientCreditError(err)` and `creditUnlockUrl(err)` read it.
